@@ -1,0 +1,58 @@
+import { Switch, Palette, Button } from "std-widgets.slint";
+
+export enum AESMode {
+    Undefined,
+    Encryption,
+    Decryption
+}
+
+export component App inherits Window {
+    default-font-size: 20px;
+    title: "File encryption system";
+    callback pick-files;
+    in-out property<[string]> files;
+    in-out property<AESMode> mode: AESMode.Undefined;
+
+    Switch {
+        x: parent.width - self.width - 10px;
+        y: 10px;
+        text: "Dark mode";
+        checked: Palette.color-scheme == ColorScheme.dark;
+        toggled => {
+            Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+        }
+    }
+
+    pick-buttons := Rectangle {
+
+        file-choice := Button {
+                visible: files.length == 0;
+                text: "Pick files";
+                x: (parent.width - self.width) * 0.5;
+                y: (parent.height - self.height) * 0.5;
+                clicked => {
+                    root.pick-files();
+                }
+            }
+
+        Button {
+            visible: files.length != 0;
+            text: "Encrypt files";
+            x: (parent.width - self.width) * 0.25;
+            y: (parent.height - self.height) * 0.5;
+            clicked => {
+                root.mode = AESMode.Encryption;
+            }
+        }
+
+        Button {
+            visible: files.length != 0;
+            text: "Decrypt files";
+            x: (parent.width - self.width) * 0.75;
+            y: (parent.height - self.height) * 0.5;
+            clicked => {
+                root.mode = AESMode.Decryption;
+            }
+        }
+    }
+}
