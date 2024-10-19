@@ -1,4 +1,4 @@
-import { Switch, Palette, Button } from "std-widgets.slint";
+import { Switch, Palette, Button, LineEdit, ProgressIndicator, Spinner } from "std-widgets.slint";
 
 export enum AESMode {
     Undefined,
@@ -10,8 +10,14 @@ export component App inherits Window {
     default-font-size: 20px;
     title: "File encryption system";
     callback pick-files;
+    callback pick-directory;
+    callback check-passphrase(string);
+    callback apply-cipher([string], string, string, AESMode);
     in-out property<[string]> files;
+    in-out property<string> directory;
     in-out property<AESMode> mode: AESMode.Undefined;
+    in-out property<bool> strong-passphrase: false;
+    in-out property<bool> applying-is-successfull: false;
 
     Switch {
         x: parent.width - self.width - 10px;
@@ -23,9 +29,9 @@ export component App inherits Window {
         }
     }
 
-    pick-buttons := Rectangle {
+    Rectangle {
 
-        file-choice := Button {
+        Button {
                 visible: files.length == 0;
                 text: "Pick files";
                 x: (parent.width - self.width) * 0.5;
@@ -36,23 +42,117 @@ export component App inherits Window {
             }
 
         Button {
-            visible: files.length != 0;
+            visible: files.length != 0 && mode == AESMode.Undefined && directory == "";
             text: "Encrypt files";
             x: (parent.width - self.width) * 0.25;
             y: (parent.height - self.height) * 0.5;
             clicked => {
                 root.mode = AESMode.Encryption;
+                confirm-button.text = "Confirm encrypting files";
+                confirm-button.is-applying = true;
             }
         }
 
         Button {
-            visible: files.length != 0;
+            visible: files.length != 0 && mode == AESMode.Undefined && directory == "";
             text: "Decrypt files";
             x: (parent.width - self.width) * 0.75;
             y: (parent.height - self.height) * 0.5;
             clicked => {
                 root.mode = AESMode.Decryption;
+                confirm-button.text = "Confirm decrypting files";
+                confirm-button.is-applying = true;
             }
+        }
+
+        passphrase-input := LineEdit {
+            visible: files.length != 0 && mode != AESMode.Undefined;
+            width: 30%;
+            x: (parent.width - self.width) * 0.5;
+            y: (parent.height - self.height) * 0.35;
+            changed text => {
+                root.check-passphrase(self.text);
+            }
+        }
+
+        password-checker := Text {
+            visible: files.length != 0 && mode != AESMode.Undefined;
+            x: passphrase-input.x + passphrase-input.width * 1.2;
+            y: passphrase-input.y;
+            text: strong-passphrase ? "Strong password" : "Weak password";
+            color: strong-passphrase ? green : red;
+
+            animate color {
+                duration: 500ms;
+                easing: ease-in-out;
+            }
+        }
+
+        directory-picker := Button {
+            visible: files.length != 0 && mode != AESMode.Undefined;
+            enabled: directory == "";
+            text: self.enabled ? "Choose a directory" : "Directory has been picked";
+            x: (parent.width - self.width) * 0.5;
+            y: (parent.height - self.height) * 0.65;
+            clicked => {
+                root.pick-directory();
+            }
+        }
+
+        confirm-button := Button {
+            visible: files.length != 0 && is-applying;
+            enabled: strong-passphrase && directory != "";
+            x: (parent.width - self.width) * 0.5;
+            y: (parent.height - self.height) * 0.8;
+            in-out property<bool> is-applying: false;
+            clicked => {
+                if (root.mode == AESMode.Encryption) {
+                    self.text = "Encrypting files...";
+                } else if (root.mode == AESMode.Decryption) {
+                    self.text = "Decrypting files...";
+                }
+
+                root.apply-cipher(root.files, passphrase-input.text, root.directory, root.mode);
+
+                progress.visible = true;
+
+                if (root.mode == AESMode.Encryption && root.applying-is-successfull) {
+                     self.text = "Files have been successfully encrypted!";
+                } else if (root.mode == AESMode.Decryption && root.applying-is-successfull) {
+                    self.text = "Files have been successfully decrypted!";
+                } else if (root.mode == AESMode.Encryption && !root.applying-is-successfull) {
+                    self.text = "Encryption failed!";
+                } else if (root.mode == AESMode.Decryption && !root.applying-is-successfull) {
+                    self.text = "Decryption failed: incorrect passphrase or corrupted data!";
+                }
+
+                passphrase-input.text = "";
+                root.mode = AESMode.Undefined;
+                root.strong-passphrase = false;
+                progress.visible = false;
+                restarting-button.visible = true;
+            }
+        }
+
+        restarting-button := Button {
+            visible: false;
+            text: "Start again";
+            x: (parent.width - self.width) * 0.5;
+            y: (parent.height - self.height) * 0.9;
+            clicked => {
+                root.files = [];
+                root.directory = "";
+                confirm-button.is-applying = false;
+                self.visible = false;
+            }
+        }
+
+        progress := ProgressIndicator {
+            visible: false;
+            x: (parent.width - self.width) * 0.5;
+            y: (parent.height - self.height) * 0.9;
+            min-width: 160px;
+            indeterminate: true;
         }
     }
 }

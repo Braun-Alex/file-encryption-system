@@ -1,4 +1,4 @@
-#include "file-picker.h"
+#include "pickers.h"
 
 std::shared_ptr<slint::VectorModel<slint::SharedString>> pick_files() {
     const std::string pick_command = R"(zenity --file-selection --multiple --title="Choose files" --separator="|")";
@@ -27,6 +27,31 @@ std::shared_ptr<slint::VectorModel<slint::SharedString>> pick_files() {
         }
 
         return files;
+    }
+
+    return {};
+}
+
+slint::SharedString pick_directory() {
+    const std::string pick_command = R"(zenity --file-selection --directory --title="Choose a directory")";
+
+    FILE* pipe = popen(pick_command.c_str(), "r");
+
+    if (!pipe) {
+        return {};
+    }
+
+    std::string directoryPath;
+
+    if (char buffer[1024]; fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        directoryPath = buffer;
+        directoryPath.erase(directoryPath.find_last_not_of(" \n\r\t") + 1);
+    }
+
+    pclose(pipe);
+
+    if (!directoryPath.empty()) {
+        return {directoryPath};
     }
 
     return {};
