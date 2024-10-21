@@ -1,6 +1,6 @@
 #include "base64.h"
 
-std::string Base64Codec::encode(const std::string& data) const {
+std::string Base64Codec::encode(const std::string& data) {
     std::stringstream encodedStream;
     Poco::Base64Encoder encoder(encodedStream);
     encoder.write(reinterpret_cast<const char*>(data.data()), static_cast<int>(data.size()));
@@ -8,7 +8,7 @@ std::string Base64Codec::encode(const std::string& data) const {
     return encodedStream.str();
 }
 
-std::string Base64Codec::decode(const std::string& data) const {
+std::string Base64Codec::decode(const std::string& data) {
     std::stringstream encodedStream(data);
     Poco::Base64Decoder decoder(encodedStream);
     std::vector<unsigned char> decodedData;

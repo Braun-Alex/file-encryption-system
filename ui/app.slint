@@ -17,7 +17,6 @@ export component App inherits Window {
     in-out property<string> directory;
     in-out property<AESMode> mode: AESMode.Undefined;
     in-out property<bool> strong-passphrase: false;
-    in-out property<bool> applying-is-successfull: false;
 
     Switch {
         x: parent.width - self.width - 10px;
@@ -79,7 +78,7 @@ export component App inherits Window {
             visible: files.length != 0 && mode != AESMode.Undefined;
             x: passphrase-input.x + passphrase-input.width * 1.2;
             y: passphrase-input.y;
-            text: strong-passphrase ? "Strong password" : "Weak password";
+            text: strong-passphrase ? "Strong passphrase" : "Weak passphrase";
             color: strong-passphrase ? green : red;
 
             animate color {
@@ -116,14 +115,10 @@ export component App inherits Window {
 
                 progress.visible = true;
 
-                if (root.mode == AESMode.Encryption && root.applying-is-successfull) {
-                     self.text = "Files have been successfully encrypted!";
-                } else if (root.mode == AESMode.Decryption && root.applying-is-successfull) {
-                    self.text = "Files have been successfully decrypted!";
-                } else if (root.mode == AESMode.Encryption && !root.applying-is-successfull) {
-                    self.text = "Encryption failed!";
-                } else if (root.mode == AESMode.Decryption && !root.applying-is-successfull) {
-                    self.text = "Decryption failed: incorrect passphrase or corrupted data!";
+                if (root.mode == AESMode.Encryption) {
+                     self.text = "File encryption has been done!";
+                } else if (root.mode == AESMode.Decryption) {
+                    self.text = "File decryption has been done!";
                 }
 
                 passphrase-input.text = "";
